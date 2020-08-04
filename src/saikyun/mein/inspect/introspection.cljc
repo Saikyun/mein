@@ -15,32 +15,30 @@
 
 (defn inspect
   [c e]
-  #?(:cljs (do
-             (println "inspecting" (introspect-key-down?))
-
-             (when (introspect-key-down?)
-               (let [iw (.getElementById js/document "introspection-window")]
-                 #_(set! (.-innerHTML iw)
-                         (with-out-str (binding [*print-meta* true]
-                                         (prn c))))
-                 
-                 (set! (.-innerHTML iw) "<a onclick=\"document.getElementById('introspection-window').style.display = 'none';\" href=\"#\">=========== close =========</a>
+  #?(:cljs (when (introspect-key-down?)
+             (.stopPropagation e)
+             (let [iw (.getElementById js/document "introspection-window")]
+               #_(set! (.-innerHTML iw)
+                       (with-out-str (binding [*print-meta* true]
+                                       (prn c))))
+               
+               (set! (.-innerHTML iw) "<a onclick=\"document.getElementById('introspection-window').style.display = 'none';\" href=\"#\">=========== close =========</a>
 <iframe style=\"width: 100%; height: 100%;\" src=\"http://localhost:9630/inspect\"></iframe>")
-                 
-                 (println "tapping")
-                 (tap> c)
-                 
-                 (set! (.. iw -style -position) "absolute")
-                 (set! (.. iw -style -display) "block")
-                 
-                 (set! (.. iw -style -left) "0px")
-                 (set! (.. iw -style -top) "0px")
-                 
-                 (set! (.. iw -style -width) "100%")
-                 (set! (.. iw -style -height) "100%")
-                 
-                 #_      (set! (.. iw -style -left) (str (.-pageX e) "px"))
-                 #_      (set! (.. iw -style -top) (str (.-pageY e) "px")))))))
+               
+               (println "tapping")
+               (tap> c)
+               
+               (set! (.. iw -style -position) "absolute")
+               (set! (.. iw -style -display) "block")
+               
+               (set! (.. iw -style -left) "0px")
+               (set! (.. iw -style -top) "0px")
+               
+               (set! (.. iw -style -width) "100%")
+               (set! (.. iw -style -height) "100%")
+               
+               #_      (set! (.. iw -style -left) (str (.-pageX e) "px"))
+               #_      (set! (.. iw -style -top) (str (.-pageY e) "px"))))))
 
 (defn add-introspection
   [cmpt]

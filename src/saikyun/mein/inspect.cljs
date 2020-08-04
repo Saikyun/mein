@@ -1,5 +1,5 @@
 (ns saikyun.mein.inspect
-  (:require [saikyun.mein.component :as cs :refer [defcomp]]
+  (:require [saikyun.mein.component :as cs :refer [defncomp]]
             [saikyun.mein.dom :as dom]
             [saikyun.mein.listening :as ls]
             
@@ -7,7 +7,8 @@
             [saikyun.mein.inspect.input :as input])
   (:require-macros [hiccups.core :as hiccups :refer [html]]))
 
-(defcomp intro-comp
+(defncomp intro-comp
+  []
   [:div
    {:class "c1"
     :click #(set! (.. (.getElementById js/document "introspection-window") -style -display)
@@ -31,13 +32,12 @@
     (.addEventListener js/document event f)
     (.push document-listeners f))
   
-  (set! (.-innerHTML introspection-div) (html (cs/materalize intro-comp)))  
+  (set! (.-innerHTML introspection-div) (html (cs/materalize (intro-comp))))  
   
   (ec/traverse-hiccup #(do (ls/add-event %) %) intro-comp))
 
 (defn cleanup!
   []
   (doseq [l document-listeners]
-    (println "removing listeners")
     (.removeEventListener js/document "keydown" l))
   (set! (.-length document-listeners) 0))
