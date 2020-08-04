@@ -2,39 +2,14 @@
   (:require [clojure.string :as str]
             [saikyun.mein.extra-core :as ec]
             [saikyun.mein.inspect.introspection :as i]
-            [saikyun.mein.collections :refer [fmap fmap!]]))
+            [saikyun.mein.collections :refer [fmap fmap!]]
+            [saikyun.mein.props :as p]
+            [alc.x-as-tests.immediate :refer [run-tests!]]
 
-(defonce id (atom 0))
-
-(defn id! 
-  ([] (id! "cid-"))
-  ([prefix] (id! prefix id))
-  ([prefix id-atom] (str prefix (swap! id-atom inc))))
+            #?(:cljs [miracle.save :refer-macros [save]]))
+  (:require-macros [saikyun.mein.component]))
 
 (def events [:press :submit :click :change :keydown :keyup :input])
-
-(defn add-id-if-none
-  [c]
-  (-> (cond (not (coll? c))
-            c
-            
-            (map? (second c))
-            (assoc-in c [1 :id] (or (:id (second c))
-                                    (:id (meta c))
-                                    (id!)))
-            
-            (not (map? (second c)))
-            (with-meta (into [] (concat [(first c) {:id (or (:id (meta c)) (id!))}]
-                                        (rest c))) (meta c))
-            
-            :else c)
-      (#(vary-meta % assoc :id (:id (second %))))))
-
-(defn add-metadata-id
-  [c]
-  (vary-meta c assoc :id (or (and (coll? c) (map? (second c)) (:id (second c)))
-                             (:id (meta c))
-                             (id!))))
 
 (defn extract-events
   [[_ props :as comp]]
@@ -58,19 +33,35 @@
       (vary-meta (update comp 1 dissoc :load) assoc :load cb)
       comp)))
 
-(def materalize (comp add-metadata-id
-                      add-id-if-none
-                      extract-events
-                      extract-load))
+(def fill-out-meta p/add-spice-id)
+
+(defn add-id
+  [c]
+  (if (-> c :props :id)
+    c
+    (p/vary-props c #(assoc % :id (:id (:mein/spice %))))))
 
 (defn map->css
   [m]
-  (if (map? m)
-    (str/join
-     "\n"
-     (for [[k v] m]
-       (str (name k) ": " (name v) ";")))
-    (name m)))
+  (when m
+    (if (map? m)
+      (str/join
+       "\n"
+       (for [[k v] m]
+         (str (name k) ": " (if (number? v) v (name v)) ";")))
+      (name m))))
+
+(defn add-style
+  [c]
+  (p/vary-props c update :style map->css))
+
+(comment
+  (add-style [:div {:style {:border "1px solid green"}}])
+  ;;=> [:div {:style "border: 1px solid green;"}]
+  )
+
+(def materalize (comp add-id
+                      add-style))
 
 (defmacro css
   [m]
@@ -79,12 +70,11 @@
               :css true))
 
 (defn add-css
-  [[_ props :as comp]]
-  (if (and (map? props)
-           (:style props))
-    (-> (update-in comp [1 :style] map->css)
-        (vary-meta assoc :style (:style props)))
-    comp))
+  [c]
+  (p/vary-props c (fn [{:keys [style] :as props}]
+                    (if-not style
+                      props
+                      (assoc-in props [:mein/spice :style] style)))))
 
 (defn trigger-load
   [c]
@@ -95,41 +85,8 @@
   (ec/traverse-hiccup
    (fn [n]
      (-> n
-         materalize
+         fill-out-meta
          add-css))
    c))
 
-(defn c-form
-  [c extra-meta]
-  `(-> ~c
-       (#(into [] %))
-       (vary-meta merge (meta ~c) ~extra-meta)
-       hydrate
-       i/add-introspection))
-
-(defmacro component
-  [c]
-  (c-form c {:form (meta &form)}))
-
-(defmacro defcomp
-  [sym doc-or-c & [c]]
-  (let [[doc c] (if (string? doc-or-c)
-                  [doc-or-c c]
-                  [nil doc-or-c])
-        c (c-form c (-> {:form (meta &form)}
-                        (#(if doc (assoc % :doc doc) %))))]
-    (if doc
-      `(def ~sym ~doc ~c)
-      `(def ~sym ~c))))
-
-(defmacro defncomp
-  [sym doc-or-args args-or-first-form & body]
-  (let [[doc args body]
-        (if (string? doc-or-args)
-          [doc-or-args args-or-first-form body]
-          [nil doc-or-args (concat [args-or-first-form] body)])
-        body (c-form `(do ~@body) (-> {:form (meta &form)}
-                                      (#(if doc (assoc % :doc doc) %))))]
-    (if doc
-      `(defn ~sym ~doc ~args ~body)
-      `(defn ~sym ~args ~body))))
+(run-tests!)

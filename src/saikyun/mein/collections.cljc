@@ -1,6 +1,5 @@
 (ns saikyun.mein.collections
-  #?(:cljs (:require [alc.x-as-tests.cljs.immediate :refer-macros [run-tests!]])
-     :clj  (:require [alc.x-as-tests.immediate :refer [run-tests!]])))
+  (:require [alc.x-as-tests.immediate :refer [run-tests!]]))
 
 (defn fconj
   ([c v] (fconj c v []))

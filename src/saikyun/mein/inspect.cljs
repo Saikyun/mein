@@ -1,13 +1,11 @@
 (ns saikyun.mein.inspect
-  (:require [saikyun.mein.component :refer-macros [defcomp]]
+  (:require [saikyun.mein.component :as cs :refer [defcomp]]
             [saikyun.mein.dom :as dom]
             [saikyun.mein.listening :as ls]
             
             [saikyun.mein.extra-core :as ec]
             [saikyun.mein.inspect.input :as input])
   (:require-macros [hiccups.core :as hiccups :refer [html]]))
-
-(defonce document-listeners #js [])
 
 (defcomp intro-comp
   [:div
@@ -21,6 +19,8 @@
     :id "introspection-window"}
    "data"])
 
+(defonce document-listeners #js [])
+
 (defonce introspection-div nil)
 
 (defn init!
@@ -31,7 +31,7 @@
     (.addEventListener js/document event f)
     (.push document-listeners f))
   
-  (set! (.-innerHTML introspection-div) (html [:div intro-comp #_ spect]))  
+  (set! (.-innerHTML introspection-div) (html (cs/materalize intro-comp)))  
   
   (ec/traverse-hiccup #(do (ls/add-event %) %) intro-comp))
 

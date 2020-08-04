@@ -1,5 +1,6 @@
 {:paths ["src"]
  
- :deps {alc.x-as-tests {:git/url "https://github.com/Saikyun/alc.x-as-tests"
-                        :sha "1865cb136c1eb9a8cdf4019a9e804c9bff7aef2e"}
+ :deps {alc.x-as-tests #_{:git/url "https://github.com/Saikyun/alc.x-as-tests"
+                          :sha "1865cb136c1eb9a8cdf4019a9e804c9bff7aef2e"} 
+        {:local/root "/Users/jona/programmering/clojure/my-xat"}
         hiccups         {:mvn/version "0.3.0"}}}

@@ -1,25 +1,19 @@
 (ns saikyun.mein.listening
   (:require [clojure.string :as str]
+            
             [saikyun.mein.collections :refer [fconj fmap!]]
             [saikyun.mein.component :as c]
-            [hiccups.runtime :as hrt]))
+            [saikyun.mein.props :as p]
+            
+            [hiccups.runtime :as hrt]
+            
+            [clojure.pprint :refer [pp pprint]]))
 
 (defn kebab->event
   [s]
   (->> (name s)
        (#(str/split % "-"))
        (str/join "")))
-
-(defmacro listen
-  [sym]
-  `(let [var# (resolve '~sym)
-         id# (str "listener-" (rand-int 10))]
-     (swap! listeners update (deref var#) fconj {:id id#, :f 
-                                                 #(set! (.-innerHTML %1) %2)})
-     [:span {:id id#
-             :class (str "listener" (symbol var#))}
-      (deref (deref var#))]))
-
 
 (def listeners (atom {}))
 (def to-remove #js [])
@@ -38,37 +32,25 @@
 
 #?(:cljs (defn add-listener
            [c]
-           (let [{:keys [listen id] :as comp} (meta c)
+           (let [{:keys [listen id]} (:mein/spice (p/props c))
                  listen-and-init
-                 (fn [{:keys [atom f]}]
+                 (fn [{:keys [atom f init]}]
                    (let [node (.getElementById js/document id)
-                         data {:id id, :component comp, :f f, :node node}]
-                     (swap! listeners update atom fconj data)
+                         data {:id id, :component c, :f f, :node node}]
+                     (swap! listeners update atom #(vec (conj % data)))
                      (add-watch atom :listeners notify-listeners)
-                     (f @atom data)))]
+                     (cond (= true init)
+                           (f @atom data)
+                           
+                           (fn? init)
+                           (init @atom data))))]
              
              (if (map? listen)
                (listen-and-init listen)
                (fmap! listen-and-init listen)))))
 
-(defmacro listen-comp
-  [sym comp-f]
-  `(let [var# (resolve '~sym)
-         comp-f# #(-> (~comp-f %) c/hydrate)
-         cb# (fn [elem# value#]
-               (let [comp# (comp-f# value#)]
-                 (when elem#
-                   (set! (.-innerHTML elem#) (hrt/render-html comp#))
-                   (c/traverse-hiccup #(do (c/trigger-load %) %) comp#))))
-         id# (str "listener-" (rand-int 10))]
-     (swap! listeners update (deref var#) fconj {:id id#, :f cb#})
-     [:div {:id id#
-            :class (str "listener" (symbol var#))}
-      (comp-f# (deref (deref var#)))]))
-
 (defn add-event
   [c]
-  #?(:cljs (let [{:keys [on id]} (meta c)]
+  #?(:cljs (let [{:keys [on id]} (:mein/spice (p/props c))]
              (doseq [[e cb] on]
                (fmap! #(.addEventListener (.getElementById js/document id) (kebab->event e) %) cb)))))
-

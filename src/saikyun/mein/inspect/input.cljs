@@ -4,5 +4,5 @@
 
 (defn listeners
   []
-  [["keydown" #(aset keydown (.-key %) true)]
+  [["keydown" #(do (println "down") (aset keydown (.-key %) true))]
    ["keyup"   #(aset keydown (.-key %) false)]])

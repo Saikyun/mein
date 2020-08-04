@@ -4,16 +4,6 @@
   [attr & [f & args]]
   `(set! ~attr (~f ~attr ~@args)))
 
-(defn update-props
-  ([cmpt f]
-   (if (map? (second cmpt))
-     (update cmpt 1 f)
-     (with-meta [(first cmpt) (f {}) (rest cmpt)] (meta cmpt))))
-  ([cmpt f & args]
-   (if (map? (second cmpt))
-     (apply update cmpt 1 f args)
-     (with-meta [(first cmpt) (apply f {} args) (rest cmpt)] (meta cmpt)))))
-
 (defn is-hiccup?
   [node]
   (and (vector? node)
@@ -26,9 +16,14 @@
     (let [[tag props-or-child & children :as new-node] (f node)
           [tag props children] (if (map? props-or-child)
                                  [tag props-or-child children]
-                                 [tag {} (concat [props-or-child] children)])
-          children (map #(traverse-hiccup f %) children)]
-      (with-meta (into [] (concat [tag props] children)) (meta new-node)))))
+                                 [tag nil (if props-or-child
+                                            (concat [props-or-child] children)
+                                            children)])
+          children (map #(traverse-hiccup f %) children)
+          new-node' (if props
+                      (into [tag props] children)
+                      (into [tag] children))]
+      (with-meta new-node' (meta new-node)))))
 
 (defn validate-hiccup
   ([node] (validate-hiccup node [] []))
@@ -46,17 +41,3 @@
            new-problems (map #(validate-hiccup % (conj path node) problems) children)]
        (apply concat problems new-problems)))))
 
-
-(defn props 
-  [hiccup-form]
-  (when (and (coll? hiccup-form) (map? (second hiccup-form))
-             (second hiccup-form))))
-
-(defn vary-props 
-  [hiccup-form f]
-  (if (and (coll? hiccup-form)
-           (or (map? (second hiccup-form))
-               (and (= 2 (count hiccup-form))
-                    (nil? (second hiccup-form)))))
-    (update hiccup-form 1 f)
-    (with-meta [(first hiccup-form) (f nil) (rest hiccup-form)] (meta hiccup-form))))
