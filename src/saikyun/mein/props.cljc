@@ -121,7 +121,7 @@
   (def text (atom ""))
   
   (saikyun.mein.props/watch [:div] #'text #'println)
-  ;;=> [:div {:mein/watch [[#'saikyun.mein.props/ref #'cljs.core/println]]}]
+  ;;=> [:div {:mein/watch [[#'text #'println]]}]
   
   (let [c (saikyun.mein.props/watch [:div] text println)
         [ref cb] (get-in (props c) [:mein/watch 0])]
@@ -129,7 +129,7 @@
   ;;=> [true true]
   
   (saikyun.mein.props/init [:div] #'println)
-  ;;=> [:div {:mein/init [#'cljs.core/println]}]
+  ;;=> [:div {:mein/init [#'println]}]
   )
 
 (run-tests!)
