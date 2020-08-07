@@ -1,7 +1,6 @@
 (ns saikyun.mein.props
   (:require [saikyun.mein.extra-core :refer [traverse-hiccup]]
             [saikyun.mein.id :as id]
-            
             [alc.x-as-tests.immediate :refer [run-tests!]]))
 
 (defn props
@@ -44,14 +43,22 @@
 
 (defn add-spice-id
   [c]
-  (vary-props c (fn [{:keys [id :mein/spice] :as props}]
-                  (if-let [id (or id (:id spice))]
-                    (assoc-in props [:mein/spice :id] id)
-                    (assoc-in props [:mein/spice :id] (id/id!))))))
+  (vary-props c (fn [props]
+                  (assoc props :mein/id (or (:id props) (:mein/id props) (id/id!))))))
+
+(defn remove-namespaced-keys
+  [m]
+  (->> (remove (comp namespace key) m)
+       (into {})))
+
+(comment
+  (remove-namespaced-keys {::a 10, :b 20})
+  ;;=> {:b 20}
+  )
 
 (defn purge-single
   [c]
-  (let [c (vary-props c dissoc :mein/spice)]
+  (let [c (vary-props c remove-namespaced-keys)]
     (if (empty? (props c))
       (into [(first c)] (drop 2 c))
       c)))
@@ -84,32 +91,45 @@
   "Adds spice (e.g. interactivity) to a component."
   ([c] c)
   ([c k v]
-   (-> (vary-props c update :mein/spice assoc k v)
-       add-spice-id))
+   (let [k (if (namespace k) 
+             k
+             (keyword "mein" (name k)))]
+     (-> (vary-props c assoc k v)
+         add-spice-id)))
   ([c k v & args]
    (as-> c $
      (spice $ k v)
      (apply spice $ args))))
 
-(defn listen
-  [c l] (spice c :listen l))
+(defmacro watch
+  "Appends props to `c`, which results in:
+  Whenever reference `ref` is modified,
+  Run `f` with arguments: dom-node, id, old-value, new-value
+  This signature is similar to the watcher function of: `clojure.core/add-watch`
+  The difference being that the first argument `dom-node` replaces the reference argument in `add-watch`."
+  [c ref f]
+  `(vary-props ~c update :mein/watch #(vec (conj % ~[ref f]))))
+
+(defmacro init
+  "Appends props to `c`, which results in:
+  When component `c` is first rendered,
+  call `f` with the resulting dom node as argument."
+  [c f]
+  `(vary-props ~c update :mein/init #(vec (conj % ~f))))
 
 (comment
-  (-> (spice [:button "Click"]
-             :on {:click #(println "Clicked")})
-      props
-      (get-in [:mein/spice :on :click])
-      boolean)
-  ;;=> true
+  (def text (atom ""))
   
-  (-> (spice [:button "Click"]
-             :on {:click #(println "Clicked")}
-             :id "clicky")
-      props
-      (#(and (get-in % [:mein/spice :on :click])
-             (get-in % [:mein/spice :id])))
-      boolean)
-  ;;=> true
+  (saikyun.mein.props/watch [:div] #'text #'println)
+  ;;=> [:div {:mein/watch [[#'saikyun.mein.props/ref #'cljs.core/println]]}]
+  
+  (let [c (saikyun.mein.props/watch [:div] text println)
+        [ref cb] (get-in (props c) [:mein/watch 0])]
+    [(= text ref) (= cb println)])
+  ;;=> [true true]
+  
+  (saikyun.mein.props/init [:div] #'println)
+  ;;=> [:div {:mein/init [#'cljs.core/println]}]
   )
 
 (run-tests!)

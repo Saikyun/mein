@@ -1,13 +1,13 @@
 (ns saikyun.mein.inspect
-  (:require [saikyun.mein.component :as cs :refer [defncomp]]
+  (:require [saikyun.mein.component :as cs :refer [defcomp]]
             [saikyun.mein.dom :as dom]
-            [saikyun.mein.listening :as ls]
+            [saikyun.mein.observers :as obs]
             
             [saikyun.mein.extra-core :as ec]
             [saikyun.mein.inspect.input :as input])
   (:require-macros [hiccups.core :as hiccups :refer [html]]))
 
-(defncomp intro-comp
+(defcomp intro-comp
   []
   [:div
    {:class "c1"
@@ -34,7 +34,7 @@
   
   (set! (.-innerHTML introspection-div) (html (cs/materalize (intro-comp))))  
   
-  (ec/traverse-hiccup #(do (ls/add-event %) %) intro-comp))
+  (ec/traverse-hiccup #(do (obs/add-event %) %) intro-comp))
 
 (defn cleanup!
   []

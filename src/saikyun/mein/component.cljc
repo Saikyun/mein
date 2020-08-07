@@ -2,14 +2,13 @@
   (:require [clojure.string :as str]
             [saikyun.mein.extra-core :as ec]
             [saikyun.mein.inspect.introspection :as i]
-            [saikyun.mein.collections :refer [fmap fmap!]]
             [saikyun.mein.props :as p]
             [alc.x-as-tests.immediate :refer [run-tests!]]
-
+            
             #?(:cljs [miracle.save :refer-macros [save]]))
   (:require-macros [saikyun.mein.component]))
 
-(def events [:press :submit :click :change :keydown :keyup :input])
+(def events [:press :submit :click :change :keydown :keyup :input :load])
 
 (defn extract-events
   [[_ props :as comp]]
@@ -37,9 +36,9 @@
 
 (defn add-id
   [c]
-  (if (-> c :props :id)
+  (if (:id c)
     c
-    (p/vary-props c #(assoc % :id (:id (:mein/spice %))))))
+    (p/vary-props c #(assoc % :id (:mein/id %)))))
 
 (defn map->css
   [m]
@@ -78,7 +77,13 @@
 
 (defn trigger-load
   [c]
-  (fmap! #(% c) (:load (meta c))))
+  #?(:cljs
+     (let [props (p/props c)
+           init (:mein/init props)
+           node (.getElementById js/document (:mein/id props))]
+       (save :trigg-load)
+       (cond (coll? init) (doall (map #(% node) init))
+             (some? init) (init node)))))
 
 (defn hydrate
   [c]

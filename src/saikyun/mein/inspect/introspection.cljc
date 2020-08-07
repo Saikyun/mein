@@ -1,7 +1,6 @@
 (ns saikyun.mein.inspect.introspection
   (:require [clojure.string :as str]
             [saikyun.mein.extra-core :as ec]
-            [saikyun.mein.collections :refer [fmap fconj]]
             [saikyun.mein.config :as config]
             [saikyun.mein.props :as p]
             [clojure.pprint :refer [pprint]]
@@ -45,4 +44,4 @@
   (p/vary-props
    cmpt
    update-in [:mein/spice :on :click]
-   fconj #(inspect cmpt %)))
+   conj #(vec (inspect cmpt %))))

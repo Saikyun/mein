@@ -17,17 +17,6 @@
   (c-form c {:form (meta &form)}))
 
 (defmacro defcomp
-  [sym doc-or-c & [c]]
-  (let [[doc c] (if (string? doc-or-c)
-                  [doc-or-c c]
-                  [nil doc-or-c])
-        c (c-form c (-> {:form (meta &form)}
-                        (#(if doc (assoc % :doc doc) %))))]
-    (if doc
-      `(def ~sym ~doc ~c)
-      `(def ~sym ~c))))
-
-(defmacro defncomp
   [sym doc-or-args args-or-first-form & body]
   (let [[doc args body]
         (if (string? doc-or-args)
