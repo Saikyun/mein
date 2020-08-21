@@ -117,14 +117,4 @@
   [c f]
   `(vary-props ~c update :mein/init #(vec (conj % ~f))))
 
-(comment
-  (def text (atom ""))
-  
-  #?(:clj (saikyun.mein.props/watch [:div] text println))
-  ;;=> [:div {:mein/watch [[text println]]}]
-  
-  #?(:clj (saikyun.mein.props/init [:div] println))
-  ;;=> [:div {:mein/init [println]}]
-  )
-
 (run-tests!)
