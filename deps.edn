@@ -1,5 +1,5 @@
 {:paths ["src"]
  
  :deps {alc.x-as-tests {:git/url "https://github.com/Saikyun/alc.x-as-tests"
-                        :sha "e18c315453c65b6bf5eed040b49cf8716fd34cdf"} 
+                        :sha "adb7dc3d2be164a5e289449a79f08da4f75e5a0c"}
         hiccups         {:mvn/version "0.3.0"}}}
